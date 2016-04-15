@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>模板编辑器demo2</title>
+    <script src="js/jquery-2.1.4.min.js"></script>
+    <script src="js/melayout.js"></script>
+    <script src="js/select2.js"></script>
+    <link type="text/css" rel="stylesheet" href="css/meLayout.css"/>
+    <link type="text/css" rel="stylesheet" href="css/demo2_style.css"/>
+    <script>
+        $(document).ready(function(){
+           var data = $('#table').meLayout({orient:'horizontal'}).data();
+
+        });
+    </script>
+</head>
+<body>
+<h3 style="text-align: center">模板编辑器demo2</h3>
+<div id="container">
+    <div class="left">
+        <select id="sel" >
+            <option>nima</option>
+        </select>
+    </div>
+    <div id="table" style="width: 100px;height: 100px;background-color: red">
+
+    </div>
+    <div class="right">
+
+    </div>
+</div>
+</body>
+</html>

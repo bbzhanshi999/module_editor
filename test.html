@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test</title>
+    <script src="js/jquery-2.1.4.min.js"></script>
+    <script src="js/melayout.js"></script>
+    <script src="js/select2.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            (function(){
+                /**
+                 * 将列数转换成列名
+                 *
+                 */
+                function spreadsheetColumnLabel(index) {
+                    var dividend = index + 1;
+                    var columnLabel = '';
+                    var modulo;
+                    while (dividend > 0) {
+                        modulo = (dividend - 1) % 26;
+                        columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
+                        dividend = parseInt((dividend - modulo) / 26, 10);
+                    }
+                    return columnLabel;
+                }
+
+                console.log(spreadsheetColumnLabel(0));
+
+                var $hhead = $(document.createElement('table')).addClass('thead').addClass('horizon'),
+                        $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical'),
+                        $content =$(document.createElement('table')).addClass('content');
+
+                var rowNum =31;
+                var colNum = 11;
+                var rowHeights = 30;
+                var colWidths = 60;
+                (function(){
+                    var $tr = $(document.createElement('tr')).attr('data-type','hhead');
+                    for(var i= 0;i<colNum+1;i++){
+                        var $th = $(document.createElement('th')).css({'height':'35px'});
+                        if(i>0){
+                            $th.html(spreadsheetColumnLabel(i-1)).attr({'data-col':i-1,'data-type':'hhead'}).css('width',colWidths+'px');
+                        }else{
+                            $th.attr('data-col','blank').css('width','60px');
+                        }
+                        $tr.append($th);
+                    }
+                    $hhead.append($tr);
+                })();
+
+                (function(){
+                    for(var i= 0;i<rowNum;i++){
+                        var $tr = $(document.createElement('tr')).attr('data-type','vhead');
+                        var $th = $(document.createElement('th')).css({'width':'60px','height':rowHeights}).attr({'data-row':i,'data-type':'vhead'}).html(i);
+                        $tr.append($th);
+                        $vhead.append($tr);
+                    };
+
+                })();
+                (function(){
+                    for(var i= 0;i<rowNum;i++){
+
+                        var $tr = $(document.createElement('tr')).attr({'data-type':'content','data-row':i});
+
+                        for(var j =0;j<colNum;j++){
+                            var $th= $(document.createElement('th')).css({'width':colWidths,'height':rowHeights}).attr({'data-row':i,'data-col':j,'data-type':'content'});
+                            $tr.append($th);
+                        }
+                        $content.append($tr);
+                    }
+                })();
+
+                //包裹div
+                var $wraper =$(document.createElement('div')).addClass('wraper');
+
+                $wraper.append($hhead);
+                var $indicator = $(document.createElement('div'));
+
+                $indicator.append($vhead);
+                $indicator.append($content);
+
+                $wraper.append($indicator);
+                $('#container').append($wraper);
+
+                var width = $hhead.width()+1;
+                var height = $vhead.height();
+
+
+                //参照线
+                $indicator.css({'width':width,'height':height+'px'});
+
+                var $rowResizer = $(document.createElement('div')).addClass('resizer').addClass('rowResizer');
+                var $colResizer = $(document.createElement('div')).addClass('resizer').addClass('colResizer');
+
+                $('#container').append($colResizer);
+                $('#container').append($rowResizer);
+
+
+
+
+                $('.thead.horizon th').on('mouseover',function(e){
+
+                    $(this).append($colResizer);
+                    var x = e.clientX;
+                    console.log(x);
+                });
+
+
+            })();
+
+
+
+        });
+    </script>
+    <style>
+        table {
+            border-top: solid 1px #CBCBCB;
+            border-left: solid 1px #CBCBCB;
+            border-collapse: separate;
+            border-spacing: 0;
+            empty-cells: show;
+            box-sizing: content-box;
+            -moz-box-sizing:content-box;
+            -webkit-box-sizing: content-box;
+            width:0;
+            table-layout: fixed;
+        }
+        table th,table td{
+            border-right: solid 1px #CBCBCB;
+            border-bottom: solid 1px #CBCBCB;
+            height: 30px;
+            width: 60px;
+        }
+        table.thead{
+            background-color: rgba(225, 225, 225, 0.67);
+
+        }
+        table.thead.vertical{
+            float: left;border-top:0px;
+        }
+        table.content{
+            float: left;border-top:0px;border-left: 0px
+        }
+
+        .wraper{
+
+            overflow: visible;
+            border-right:dotted 2px rgba(213, 129, 30, 0.95);
+            border-bottom:dotted 2px rgba(213, 129, 30, 0.95);
+            width: 733px;
+            height:1062px;
+
+        }
+
+
+        .resizer {
+            display: none;
+        }
+
+        .resizer.colResizer{
+
+        }
+
+        .resizer.rowResizer{
+
+        }
+
+    </style>
+</head>
+<body>
+<h1 style="width: 200px;margin:0 auto;">XXXXX</h1>
+<div id="container" style="margin: 0 auto;width:794px;height:1124px;border: solid 1px darkgrey;position: relative;overflow: hidden">
+
+</div>
+
+
+
+
+
+
+</body>
+</html>

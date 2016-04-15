@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="less/demo1_style.less"/>
+    <meta charset="UTF-8">
+    <title>demo1</title>
+    <script src="js/jquery-2.1.4.min.js"></script>
+    <script src="js/handsontable.full.js"></script>
+    <script src="js/eventUtils.js"></script>
+    <link type="text/css" rel="stylesheet" href="css/handsontable.full.css">
+    <link type="text/css" rel="stylesheet" href="css/demo1_style.css">
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var table = document.getElementById('table');
+            var hot = new Handsontable(table, {
+                startCols: 30,//初始列数
+                startRows: 20,//初始行数
+                rowHeaders: true,//行头
+                colHeaders: true,//列头
+                contextMenu: true,//是否有右击菜单
+                width: 800,//表宽度
+                height: 600,//表高度
+                colWidths: 40,//每列宽度
+                rowHeights: 30,//每列高度
+                mergeCells: true,//是否允许合并
+                allowInsertColumn: false,//是否允许插入列
+                allowInsertRow: false,//是否允许插入行
+                manualColumnResize: true,//是否允许手动更改列宽
+                manualRowResize: true,//是否允许手动修改行高
+
+                afterSelection: function (r, c, r2, c2) {
+                    console.log(arguments[0]);
+                    console.log(r);
+                    console.log(c);
+                    console.log(r2);
+                    console.log(c2);
+                },
+
+
+            });
+
+            var ff = function (e, c, t) {
+                $(t).addClass('ripple');
+                $(t)
+            }
+
+
+            var checkbox = document.querySelector('input[type="checkbox"]');
+
+            EventUtils.addHandler(checkbox, 'click', function (e) {
+                console.log(this.checked);
+                if (checkbox.checked) {
+                    $('td,th').addClass("ripple");
+                } else {
+                    //Handsontable.hooks.remove('afterOnCellMouseOver',ff,hot);
+                    $('td,th').removeClass("ripple");
+                }
+            })
+
+
+            var btn = document.querySelectorAll('button')[0];
+
+            $(btn).on('click', function (e) {
+                var cellInfo = hot.getSelected();
+                var rowNum = cellInfo[0];
+                var colNum = cellInfo[1];
+                var cell = hot.getCell(rowNum, colNum);
+                var cellEditor = hot.getCellEditor(rowNum, colNum);
+                var cellMeta = hot.getCellMeta(rowNum, colNum);
+                console.log(cell);
+                console.log(cellEditor);
+                console.log(cellMeta);
+            })
+
+
+        })
+    </script>
+</head>
+<body>
+<h3 style="text-align: center">模板编辑器demo1</h3>
+<div id="container">
+    <div class="left">
+        <button type="button">
+            打印cell信息
+        </button>
+        <br/>
+        <input type="checkbox" value="开启cellmouseover">开启cellmouseover
+    </div>
+    <div id="table">
+
+    </div>
+    <div class="right">
+
+    </div>
+</div>
+</body>
+</html>

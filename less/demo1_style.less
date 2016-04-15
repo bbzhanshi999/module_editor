@@ -1,0 +1,79 @@
+.center {
+  margin: 0 auto;
+}
+
+#container {
+  width: 1100px;
+  height: 100%;
+  .center;
+  div {
+    display: inline-block;
+    vertical-align: top;
+  }
+  .left {
+    width: 150px;
+    height: 50%;
+    background-color: #AAAABB;
+  }
+  .right {
+    width: 150px;
+    height: 50%;
+    background-color: #AAAABB;
+  }
+  #table {
+    width:800px;
+    height:600px
+  }
+}
+
+.colorChange {
+  0%{background-color: red}
+  50%{background-color: green}
+  100%{background-color: white}
+}
+
+@keyframes fade {
+  .colorChange;
+}
+
+@-khtml-keyframes fade {
+  .colorChange;
+}
+
+@-moz-keyframes fade {
+  .colorChange;
+}
+
+@-o-keyframes fade {
+  .colorChange;
+}
+
+@-webkit-keyframes fade {
+  .colorChange;
+}
+
+.anti (@style:fade,@second:1s){
+  animation: @style @second;
+  -moz-animation:@style @second;/* Firefox */
+  -webkit-animation: @style @second;	/* Safari 和 Chrome */
+  -o-animation: @style @second;
+}
+
+.trans (@style:background-color,@second:1s){
+  transition: @style @second;
+  -moz-transition:@style @second;/* Firefox */
+  -webkit-transition: @style @second;	/* Safari 和 Chrome */
+  -o-transition: @style @second;
+}
+
+
+.ripple{
+    background-color: white;
+    .trans(background-color,2s);
+    &:hover{
+      background-color: red;
+
+    }
+
+}
+

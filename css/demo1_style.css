@@ -1,0 +1,102 @@
+.center {
+  margin: 0 auto;
+}
+#container {
+  width: 1100px;
+  height: 100%;
+  margin: 0 auto;
+}
+#container div {
+  display: inline-block;
+  vertical-align: top;
+}
+#container .left {
+  width: 150px;
+  height: 50%;
+  background-color: #AAAABB;
+}
+#container .right {
+  width: 150px;
+  height: 50%;
+  background-color: #AAAABB;
+}
+#container #table {
+  width: 800px;
+  height: 600px;
+}
+.colorChange 0% {
+  background-color: red;
+}
+.colorChange 50% {
+  background-color: green;
+}
+.colorChange 100% {
+  background-color: white;
+}
+@keyframes fade {
+  0% {
+    background-color: red;
+  }
+  50% {
+    background-color: green;
+  }
+  100% {
+    background-color: white;
+  }
+}
+@-khtml-keyframes fade {
+  0% {
+    background-color: red;
+  }
+  50% {
+    background-color: green;
+  }
+  100% {
+    background-color: white;
+  }
+}
+@-moz-keyframes fade {
+  0% {
+    background-color: red;
+  }
+  50% {
+    background-color: green;
+  }
+  100% {
+    background-color: white;
+  }
+}
+@-o-keyframes fade {
+  0% {
+    background-color: red;
+  }
+  50% {
+    background-color: green;
+  }
+  100% {
+    background-color: white;
+  }
+}
+@-webkit-keyframes fade {
+  0% {
+    background-color: red;
+  }
+  50% {
+    background-color: green;
+  }
+  100% {
+    background-color: white;
+  }
+}
+.ripple {
+  background-color: white;
+  transition: background-color 2s;
+  -moz-transition: background-color 2s;
+  /* Firefox */
+  -webkit-transition: background-color 2s;
+  /* Safari 和 Chrome */
+  -o-transition: background-color 2s;
+}
+.ripple:hover {
+  background-color: red;
+}

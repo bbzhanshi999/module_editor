@@ -1,0 +1,44 @@
+
+
+.meLayout {
+  overflow: hidden;
+  box-shadow: 3px 3px 10px grey;
+  -webkit-box-shadow: 3px 3px 10px grey;
+  -moz-box-shadow: 3px 3px 10px grey;
+  -o-box-shadow: 3px 3px 10px grey;
+  .boxSizing;
+  table {
+    width:0;
+    table-layout: fixed;
+    border-top: solid 1px #CBCBCB;
+    border-left: solid 1px #CBCBCB;
+    border-collapse: separate;
+    border-spacing: 0;
+    empty-cells: show;
+    .boxSizing;
+    th, td {
+      border-right: solid 1px #CBCBCB;
+      border-bottom: solid 1px #CBCBCB;
+    }
+    &.thead {
+      background-color: rgba(225, 225, 225, 0.67);
+      &.vertical {
+        border-top: 0px;
+        float: left;
+      }
+    }
+    &.content {
+      float: left;
+      border-top: 0px;
+      border-left: 0px;
+    }
+  }
+}
+
+
+/*迫使ie按照标准的盒子模型进行计算*/
+.boxSizing{
+  box-sizing: content-box;
+  -moz-box-sizing:content-box;
+  -webkit-box-sizing: content-box;
+}
