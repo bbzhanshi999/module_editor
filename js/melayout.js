@@ -8,8 +8,7 @@
     var Layout, VLayout, HLayout,
         A4_WIDTH = 794, A4_HEIGHT = 1123, //a4纸长宽,
         ABS_CONTENT_WIDTH = 734, ABS_CONTENT_HEIGHT = 1062,//显示区域绝对长宽
-        REL_CONTENT_WIDTH = 780, REL_CONTENT_HEIGHT = 1160,
-        ROW_NUM =40,COL_NUM = 20;
+        ROW_NUM = 40, COL_NUM = 20;
 
     /**
      * 判断是否数组中是否含有此值
@@ -73,7 +72,6 @@
     }
 
 
-
     Layout = clazz(Object, {
 
 
@@ -99,12 +97,12 @@
          * @param options
          * @returns {*}
          */
-        optionSecurityFilter:function(options){
+        optionSecurityFilter: function (options) {
 
-            options.rowNum=options.rowNum?parseInt(options.rowNum,10):options.rowNum;
-            options.colNum=options.colNum?parseInt(options.colNum,10):options.colNum;
-            options.colWidths=options.colWidths?parseInt(options.colWidths,10):options.colWidths;
-            options.rowHeights=options.rowHeights?parseInt(options.rowHeights,10):options.rowHeights;
+            options.rowNum = options.rowNum ? parseInt(options.rowNum, 10) : options.rowNum;
+            options.colNum = options.colNum ? parseInt(options.colNum, 10) : options.colNum;
+            options.colWidths = options.colWidths ? parseInt(options.colWidths, 10) : options.colWidths;
+            options.rowHeights = options.rowHeights ? parseInt(options.rowHeights, 10) : options.rowHeights;
             delete options.contentWidth;
             delete options.contentHeight;
             delete options.paperWidth;
@@ -144,27 +142,34 @@
         createTable: function (options) {
             var $container = options.$container,//容器
                 $indicator = $(document.createElement('div')).addClass('indicator').css({
-                    'width': (options.colWidths+3)*options.colNum+options.headWidth+3,
-                    'height': (options.rowHeights+3)*options.rowNum+options.headHeight+3
+                    'width': (options.colWidths + 1) * options.colNum + options.headWidth + 1,
+                    'height': (options.rowHeights + 1) * options.rowNum + options.headHeight + 1
                 }),//参照框
                 $wrapper = $(document.createElement('div')).addClass('wrapper'),//包裹内容table和竖直表头
                 $content = $(document.createElement('table')).addClass('content'),//内容框
                 $hhead = $(document.createElement('table')).addClass('thead').addClass('horizon'),//横表头
-                $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical');//竖表头
-
+                $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical'),//竖表头
+                $rowResizer = $(document.createElement('div')).addClass('resizer').addClass('rowResizer'),//行高调整器
+                $colResizer = $(document.createElement('div')).addClass('resizer').addClass('colResizer'),//列宽调整器
+                $tipLineX=$(document.createElement('div')).addClass('tip_lineX'),
+                $tipLineY=$(document.createElement('div')).addClass('tip_lineY'),
+                dragable,resDiretion,//拖拽标志,调整方向
+                x, y,//原始位置
+                col,row,
+                moveX,moveY;//鼠标移动距离
 
             $container.empty();//去除容器内元素
             $container.removeAttr('style', '');//去除容器样式
             $container.css({
-                'width': (options.colWidths+3)*options.colNum+options.headWidth+3,
-                'height': (options.rowHeights+3)*options.rowNum+options.headHeight+3
+                'width': (options.colWidths + 1) * options.colNum + options.headWidth + 1,
+                'height': (options.rowHeights + 1) * options.rowNum + options.headHeight + 1
             });//让容器的长宽与a4纸尺寸相同
             $container.addClass('meLayout');
 
             /*循环生成横表头单元格*/
             (function () {
                 var $tr = $(document.createElement('tr')).attr('data-type', 'hhead');
-                for (var i = 0; i < parseInt(options.colNum)+1 ; i++) {
+                for (var i = 0; i < parseInt(options.colNum) + 1; i++) {
                     var $th = $(document.createElement('th')).css({'height': options.headHeight});
                     if (i > 0) {
                         $th.html(spreadsheetColumnLabel(i - 1)).attr({
@@ -214,13 +219,108 @@
             $wrapper.append($content);
             $indicator.append($wrapper);
             $container.append($indicator);
+            $container.append($colResizer);
+            $container.append($rowResizer);
+
+            $wrapper.css({'width': ($hhead.width() + 1) + 'px', 'height': ($vhead.height() + 1) + 'px'});
+
+            //todo:调整高宽功能
+
+            //加载调整器
+            $('.meLayout table.thead th').on('mouseover', function (e) {
+
+                if ($(this).data('type') === 'hhead') {
+                    $(this).append($colResizer);
+                    $colResizer.css({
+                        'display': 'block',
+                        'height': options.headHeight
+                    }).attr('data-col', $(this).data('col'));
+                }else if($(this).data('type') === 'vhead'){
+                    $(this).append($rowResizer);
+                    $rowResizer.css({
+                        'display': 'block',
+                        'width': options.headWidth
+                    }).attr('data-row', $(this).data('row'));
+                }
+
+            });
+
+            //鼠标移动时的处理器
+            var mouseMoveHandler = function (e) {
+                if (dragable) {
+                    moveX = e.clientX - x;
+                    moveY = e.clientY - y;
+                    $tipLineX.css('top',e.clientY);
+                    $tipLineY.css('left',e.clientX);
+                }
+            };
+
+            //鼠标松开处理器
+            var mouseUpHandler = function (e) {
+                var width,height;
+
+                dragable = false;
+                $(document).off('mousemove', mouseMoveHandler);
+
+                switch(resDiretion){
+                    case 'V':
+
+                        height = $('.meLayout table.content th[data-row=' + row + ']').height();
+
+                        if (moveY < 0 && (height - Math.abs(moveY)) <= options.minHeight) {
+                            $('.meLayout table th[data-row=' + row + ']').css('height', options.minHeight + 'px');
+                        } else {
+                            $('.meLayout table th[data-row=' + row + ']').css('height', (height + moveY) + 'px');
+                            height = $wrapper.height();
+                            $wrapper.css('width', (height + moveY) + 'px');
+                        }
+                        break;
+                    case 'H':
+                        width = $('.meLayout table.content th[data-col=' + col + ']').width();
+
+                        if (moveX < 0 && (width - Math.abs(moveX)) <= options.minWidth) {
+                            $('.meLayout table th[data-col=' + col + ']').css('width', options.minWidth + 'px');
+                        } else {
+                            $('.meLayout table th[data-col=' + col + ']').css('width', (width + moveX) + 'px');
+                            width = $wrapper.width();
+                            $wrapper.css('width', (width + moveX) + 'px');
+                        }
+                        break;
+                }
+
+                $(document).off('mouseup', mouseUpHandler);
+                moveX = 0;moveY = 0;x=0;y = 0;resDiretion = undefined;col = 0;row = 0;
+                $('body').css('cursor','default');
+                $tipLineX.removeClass('show');
+                $tipLineY.removeClass('show');
+            };
+
+            /*绑定处理事件*/
+            $('.meLayout .resizer').on('mousedown', function (e) {
+                x = e.clientX;
+                y = e.clientY;
+                dragable = true;
+                $(document).on('mousemove', mouseMoveHandler);
+                if($(this).hasClass('rowResizer')){
+                    resDiretion = 'V';
+                    row = $(this).attr('data-row');
+                    $('body').css('cursor','ns-resize');
+                    $('body').append($tipLineX);
+                    $tipLineX.addClass('show').css('top',y);
+                }else{
+                    resDiretion = 'H';
+                    col = $(this).attr('data-col');
+                    $('body').css('cursor','ew-resize');
+                    $('body').append($tipLineY);
+                    $tipLineY.addClass('show').css('left',x);
+                }
+                $(document).on('mouseup', mouseUpHandler);
 
 
-            $wrapper.css({'width': ($hhead.width()+1)+'px', 'height': ($vhead.height()+1) + 'px'});
+            });
 
-
-
-
+            $container.data('meLayout',this);
+            $container.data('options',options);
         }
     });
 
@@ -252,13 +352,13 @@
             options = args[0] ? args[0] : {};
             if (options.orient && options.orient.toLowerCase() === 'horizontal') {
                 layout = new Layout();
-                options.rowNum = options.rowNum ? options.rowNum : 30;
-                options.colNum = options.colNum ? options.colNum : 30;
+                options.rowNum = options.rowNum ? options.rowNum : 20;
+                options.colNum = options.colNum ? options.colNum : 20;
             } else {
                 layout = new Layout();
                 options.orient = 'vertical';
-                options.rowNum = options.rowNum ? options.rowNum : 40;
-                options.colNum = options.colNum ? options.colNum : 20;
+                options.rowNum = options.rowNum ? options.rowNum : 30;
+                options.colNum = options.colNum ? options.colNum : 15;
             }
             options.$container = this;
             layout.init(options);
@@ -279,8 +379,8 @@
      * @type {{}}
      */
     $.fn.meLayout.defaults = {
-        rowNum: 40,
-        colNum: 20,
+        rowNum: 30,
+        colNum: 15,
         rowHeights: Math.floor(ABS_CONTENT_HEIGHT / ROW_NUM),//行高
         colWidths: Math.floor(ABS_CONTENT_WIDTH / COL_NUM),//列宽
         paperWidth: A4_WIDTH,//容器宽度
@@ -289,7 +389,9 @@
         contentHeight: ABS_CONTENT_HEIGHT,//内容区域长度
         orient: 'vertical',
         headHeight: 25,
-        headWidth: 40
+        headWidth: 40,
+        minWidth:12,//单元格最小宽度
+        minHeight:14//单元格最小宽度
     }
 
 

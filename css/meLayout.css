@@ -24,6 +24,7 @@
 }
 .meLayout table th,
 .meLayout table td {
+  padding: 0 0;
   border-right: solid 1px #CBCBCB;
   border-bottom: solid 1px #CBCBCB;
   position: relative;
@@ -38,6 +39,7 @@
   -webkit-user-select: none;
   -ms-user-select: none;
   -khtml-user-select: none;
+  font-size: 12px;
 }
 .meLayout table.thead.vertical {
   border-top: 0px;
@@ -45,6 +47,7 @@
 }
 .meLayout table.thead.vertical th {
   width: 40px;
+  overflow: hidden ;
 }
 .meLayout table.thead.horizon th {
   height: 25px;
@@ -58,6 +61,51 @@
   overflow: visible;
   border-right: dotted 2px rgba(213, 129, 30, 0.95);
   border-bottom: dotted 2px rgba(213, 129, 30, 0.95);
+}
+.meLayout .resizer {
+  display: none;
+  position: absolute;
+}
+.meLayout .resizer.colResizer {
+  width: 6px;
+  top: 0px;
+  right: 0px;
+  z-index: 2;
+}
+.meLayout .resizer.colResizer:hover {
+  cursor: ew-resize;
+  background-color: #d2d2d8;
+}
+.meLayout .resizer.rowResizer {
+  height: 6px;
+  bottom: 0px;
+  left: 0px;
+}
+.meLayout .resizer.rowResizer:hover {
+  cursor: ns-resize;
+  background-color: #d2d2d8;
+}
+.tip_lineX {
+  width: 100%;
+  height: 1px;
+  border-top: dotted 1px black;
+  position: absolute;
+  display: none;
+  left: 0px;
+}
+.tip_lineX.show {
+  display: block;
+}
+.tip_lineY {
+  height: 100%;
+  width: 1px;
+  border-left: dotted 1px black;
+  position: absolute;
+  display: none;
+  top: 0px;
+}
+.tip_lineY.show {
+  display: block;
 }
 /*迫使ie按照标准的盒子模型进行计算*/
 .boxSizing {

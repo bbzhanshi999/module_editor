@@ -10,8 +10,13 @@
     <link type="text/css" rel="stylesheet" href="css/demo2_style.css"/>
     <script>
         $(document).ready(function () {
-            var data = $('#table').meLayout({orient: 'horizontal'}).data();
+            var data = $('#table').meLayout().data();
 
+
+            $('#init').on('click',function(){
+                //$('#table').meLayout().data();
+                data.meLayout.init(data.options);
+            })
         });
     </script>
 </head>
@@ -19,9 +24,7 @@
 <h3 style="text-align: center">模板编辑器demo2</h3>
 <div id="container">
     <div class="left">
-        <select id="sel">
-            <option>nima</option>
-        </select>
+        <button type="button" id="init">初始化</button>
     </div>
     <div id="table" style="width: 100px;height: 100px;background-color: red">
 
