@@ -5,11 +5,11 @@
 
 ;(function ($, window, document, undefined) {
 
-    var Layout, VLayout, HLayout,
+    var Layout,
         A4_WIDTH = 794, A4_HEIGHT = 1123, //a4纸长宽,
         ABS_CONTENT_WIDTH = 734, ABS_CONTENT_HEIGHT = 1062,//显示区域绝对长宽
-        ROW_NUM = 40, COL_NUM = 20;
-
+        ROW_NUM = 40, COL_NUM = 20,//行列数
+        $selectedCell;//被选中的单元格
     /**
      * 判断是否数组中是否含有此值
      * @param value
@@ -56,6 +56,27 @@
         return columnLabel;
     }
 
+    /*当时间为mouseup或者mousedown时，可以通过event.button方法确定鼠标上哪个按键*/
+    function getButton(event) {
+        if (document.implementation.hasFeature('MouseEvents', '2.0')) {
+            return event.button;
+        } else {
+            switch (event.button) {
+                case 1:
+                case 3:
+                case 5:
+                case 7:
+                    return 0;
+                case 2:
+                case 6:
+                    return 2;
+                case 4:
+                    return 1;
+            }
+        }
+    }
+
+
     /**
      * 通过原型链继承模式创建新的构造函数
      * @param superClass
@@ -74,10 +95,14 @@
 
     Layout = clazz(Object, {
 
-
+        /**
+         * 初始化布局控件
+         * @param options
+         */
         init: function (options) {
             options = this.prepareOpts(options);
             this.createTable(options);
+            this.initfeature(options);
         },
 
         /**
@@ -103,12 +128,16 @@
             options.colNum = options.colNum ? parseInt(options.colNum, 10) : options.colNum;
             options.colWidths = options.colWidths ? parseInt(options.colWidths, 10) : options.colWidths;
             options.rowHeights = options.rowHeights ? parseInt(options.rowHeights, 10) : options.rowHeights;
+            options.mergeCell = typeof options.mergeCell === 'boolean' || options.mergeCell instanceof Boolean ? options.mergeCell : true;
+            options.editable = typeof options.editable === 'boolean' || options.editable instanceof Boolean ? options.editable : true;
             delete options.contentWidth;
             delete options.contentHeight;
             delete options.paperWidth;
             delete options.paperHeight;
             delete options.headWidth;
             delete options.headHeight;
+            delete options.minWidth;
+            delete options.minHeight;
             return options;
         },
 
@@ -151,12 +180,12 @@
                 $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical'),//竖表头
                 $rowResizer = $(document.createElement('div')).addClass('resizer').addClass('rowResizer'),//行高调整器
                 $colResizer = $(document.createElement('div')).addClass('resizer').addClass('colResizer'),//列宽调整器
-                $tipLineX=$(document.createElement('div')).addClass('tip_lineX'),
-                $tipLineY=$(document.createElement('div')).addClass('tip_lineY'),
-                dragable,resDiretion,//拖拽标志,调整方向
+                $tipLineX = $(document.createElement('div')).addClass('tip_lineX'),//X轴辅助线
+                $tipLineY = $(document.createElement('div')).addClass('tip_lineY'),//Y轴辅助线
+                dragable, resDiretion,//拖拽标志,调整方向
                 x, y,//原始位置
-                col,row,
-                moveX,moveY;//鼠标移动距离
+                col, row,
+                moveX, moveY;//鼠标移动距离
 
             $container.empty();//去除容器内元素
             $container.removeAttr('style', '');//去除容器样式
@@ -224,7 +253,6 @@
 
             $wrapper.css({'width': ($hhead.width() + 1) + 'px', 'height': ($vhead.height() + 1) + 'px'});
 
-            //todo:调整高宽功能
 
             //加载调整器
             $('.meLayout table.thead th').on('mouseover', function (e) {
@@ -235,7 +263,7 @@
                         'display': 'block',
                         'height': options.headHeight
                     }).attr('data-col', $(this).data('col'));
-                }else if($(this).data('type') === 'vhead'){
+                } else if ($(this).data('type') === 'vhead') {
                     $(this).append($rowResizer);
                     $rowResizer.css({
                         'display': 'block',
@@ -250,19 +278,19 @@
                 if (dragable) {
                     moveX = e.clientX - x;
                     moveY = e.clientY - y;
-                    $tipLineX.css('top',e.clientY);
-                    $tipLineY.css('left',e.clientX);
+                    $tipLineX.css('top', e.clientY);
+                    $tipLineY.css('left', e.clientX);
                 }
             };
 
             //鼠标松开处理器
             var mouseUpHandler = function (e) {
-                var width,height;
+                var width, height;
 
                 dragable = false;
                 $(document).off('mousemove', mouseMoveHandler);
 
-                switch(resDiretion){
+                switch (resDiretion) {
                     case 'V':
 
                         height = $('.meLayout table.content th[data-row=' + row + ']').height();
@@ -274,6 +302,7 @@
                             height = $wrapper.height();
                             $wrapper.css('width', (height + moveY) + 'px');
                         }
+
                         break;
                     case 'H':
                         width = $('.meLayout table.content th[data-col=' + col + ']').width();
@@ -289,10 +318,22 @@
                 }
 
                 $(document).off('mouseup', mouseUpHandler);
-                moveX = 0;moveY = 0;x=0;y = 0;resDiretion = undefined;col = 0;row = 0;
-                $('body').css('cursor','default');
+                moveX = 0;
+                moveY = 0;
+                x = 0;
+                y = 0;
+                resDiretion = undefined;
+                col = 0;
+                row = 0;
+                $('body').css('cursor', 'default');
                 $tipLineX.removeClass('show');
                 $tipLineY.removeClass('show');
+                if ($selectedCell && $selectedCell.length > 0) {
+                    $container.find('div.selected').css({
+                        'width': $selectedCell.width() - 4,
+                        'height': $selectedCell.height() - 4
+                    }).addClass('show').appendTo($selectedCell);
+                }
             };
 
             /*绑定处理事件*/
@@ -301,35 +342,120 @@
                 y = e.clientY;
                 dragable = true;
                 $(document).on('mousemove', mouseMoveHandler);
-                if($(this).hasClass('rowResizer')){
+                if ($(this).hasClass('rowResizer')) {
                     resDiretion = 'V';
                     row = $(this).attr('data-row');
-                    $('body').css('cursor','ns-resize');
+                    $('body').css('cursor', 'ns-resize');
                     $('body').append($tipLineX);
-                    $tipLineX.addClass('show').css('top',y);
-                }else{
+                    $tipLineX.addClass('show').css('top', y);
+                } else {
                     resDiretion = 'H';
                     col = $(this).attr('data-col');
-                    $('body').css('cursor','ew-resize');
+                    $('body').css('cursor', 'ew-resize');
                     $('body').append($tipLineY);
-                    $tipLineY.addClass('show').css('left',x);
+                    $tipLineY.addClass('show').css('left', x);
                 }
                 $(document).on('mouseup', mouseUpHandler);
 
 
             });
 
-            $container.data('meLayout',this);
-            $container.data('options',options);
+            $container.data('meLayout', this);
+            $container.data('options', options);
+            $container.data('options', options);
+            $container.data('options', options);
+        },
+
+
+        /**
+         * 初始化功能模块
+         */
+        initfeature: function (options) {
+            var $selectedShower = $(document.createElement('div')).addClass('selected'),
+                $container = options.$container;
+            $container.append($selectedShower);
+
+            /*添加选中框显示*/
+            $container.find('.content th').on('click', function (e) {
+                $selectedShower.css({
+                    'width': $(this).width() - 4,
+                    'height': $(this).height() - 4
+                }).addClass('show').appendTo(this);
+                $selectedCell = $(this);
+                return false;
+            });
+
+            /*取消选中框显示*/
+            $('body').not('.meLayout.content th').on('click', function (e) {
+                $selectedShower.removeClass('show');
+                $selectedCell = undefined;
+            })
+
+            if (options.mergeCell) {
+                this.runMergeCell(options);
+            }
+            if (options.editable) {
+                this.openEdit(options);
+            }
+        },
+
+
+        /**
+         * 启动合并单元格功能
+         * @param options
+         */
+        runMergeCell: function (options) {
+            var $container = options.$container,
+                $startCell, $endCell,//开始和终止和经过cell
+                dragable = false, //拖拽状态
+                startX, startY, endX, endY, temp,//坐标
+                overHandler;
+
+            overHandler = function (e) {
+                $endCell = $(this);
+                endX = $endCell.data('col');
+                endY = $endCell.data('row');
+                console.log(endX);
+                if (startX > endX) {
+                    temp = startX;
+                    startX = endX;
+                    endX = temp;
+                }
+                if (startY > endY) {
+                    temp = startY;
+                    startY = endY;
+                    endY = temp;
+                }
+
+                (function () {
+                    for (var x = startX; x <= endX; x++) {
+                        for (var y = startY; y <= startY; y++) {
+                            var a = $container.find('.content th[data-col=' + x + '],.content th[data-row=' + y + ']').addClass('shade');
+                            console.log(a);
+                        }
+                    };
+                })();
+            };
+
+            $container.find('.content th').on('mousedown', function (e) {
+                $startCell = $(this);
+                startX = $startCell.data('col');
+                startY = $startCell.data('row');
+                dragable = true;
+                $container.find('.content th').on('mouseover', overHandler);
+            });
+
+
+            //todo：启动合并单元格
+        },
+
+        /**
+         * 启动编辑功能
+         * @param options
+         */
+        openEdit: function (options) {
+            //todo:启动编辑功能
         }
-    });
-
-
-    HLayout = clazz(Layout, {
-        //todo
-    });
-    VLayout = clazz(Layout, {
-        //todo
     });
 
 
@@ -390,8 +516,10 @@
         orient: 'vertical',
         headHeight: 25,
         headWidth: 40,
-        minWidth:12,//单元格最小宽度
-        minHeight:14//单元格最小宽度
+        minWidth: 12,//单元格最小宽度
+        minHeight: 14,//单元格最小宽度
+        mergeCell: true,//是否允许合并单元格
+        editable: true//是否可编辑
     }
 
 

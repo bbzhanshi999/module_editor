@@ -50,6 +50,9 @@
       float: left;
       border-top: 0px;
       border-left: 0px;
+      th.shade{
+        background-color: #99d8f2;
+      }
     }
   }
   .indicator {
@@ -84,6 +87,18 @@
       }
     }
   }
+
+  .selected{
+    display: none;
+    border: solid 2px #178fe5;
+    position: absolute;
+    top:0;
+    left:0;
+    &.show{
+      display:block;
+    }
+  }
+
 }
 .tip_lineX{
   width:100%;

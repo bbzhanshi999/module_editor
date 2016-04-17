@@ -6,7 +6,7 @@
   height: 100%;
   margin: 0 auto;
 }
-#container div {
+#container>div {
   display: inline-block;
   vertical-align: top;
 }
