@@ -8,11 +8,13 @@
     <script src="js/select2.js"></script>
     <script>
         $(document).ready(function () {
+            var a = 'a';
+            console.log(typeof a==='string');
 
-            (function(){
+
+            (function () {
                 /**
                  * 将列数转换成列名
-                 *
                  */
                 function spreadsheetColumnLabel(index) {
                     var dividend = index + 1;
@@ -30,66 +32,79 @@
 
                 var $hhead = $(document.createElement('table')).addClass('thead').addClass('horizon'),
                         $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical'),
-                        $content =$(document.createElement('table')).addClass('content');
+                        $content = $(document.createElement('table')).addClass('content');
 
-                var rowNum =31;
+                var rowNum = 31;
                 var colNum = 11;
                 var rowHeights = 30;
                 var colWidths = 60;
-                (function(){
-                    var $tr = $(document.createElement('tr')).attr('data-type','hhead');
-                    for(var i= 0;i<colNum+1;i++){
-                        var $th = $(document.createElement('th')).css({'height':'35px'});
-                        if(i>0){
-                            $th.html(spreadsheetColumnLabel(i-1)).attr({'data-col':i-1,'data-type':'hhead'}).css('width',colWidths+'px');
-                        }else{
-                            $th.attr('data-col','blank').css('width','60px');
+                var headWidth = 60;
+                var headHeight = 35;
+                (function () {
+                    var $tr = $(document.createElement('tr')).attr('data-type', 'hhead');
+                    for (var i = 0; i < colNum + 1; i++) {
+                        var $th = $(document.createElement('th')).css({'height': '35px'});
+                        if (i > 0) {
+                            $th.html(spreadsheetColumnLabel(i - 1)).attr({
+                                'data-col': i - 1,
+                                'data-type': 'hhead'
+                            }).css('width', colWidths + 'px');
+                        } else {
+                            $th.attr('data-col', 'blank').css('width', '60px');
                         }
                         $tr.append($th);
                     }
                     $hhead.append($tr);
                 })();
 
-                (function(){
-                    for(var i= 0;i<rowNum;i++){
-                        var $tr = $(document.createElement('tr')).attr('data-type','vhead');
-                        var $th = $(document.createElement('th')).css({'width':'60px','height':rowHeights}).attr({'data-row':i,'data-type':'vhead'}).html(i);
+                (function () {
+                    for (var i = 0; i < rowNum; i++) {
+                        var $tr = $(document.createElement('tr')).attr('data-type', 'vhead');
+                        var $th = $(document.createElement('th')).css({
+                            'width': '60px',
+                            'height': rowHeights
+                        }).attr({'data-row': i, 'data-type': 'vhead'}).html(i);
                         $tr.append($th);
                         $vhead.append($tr);
-                    };
+                    }
+                    ;
 
                 })();
-                (function(){
-                    for(var i= 0;i<rowNum;i++){
+                (function () {
+                    for (var i = 0; i < rowNum; i++) {
 
-                        var $tr = $(document.createElement('tr')).attr({'data-type':'content','data-row':i});
+                        var $tr = $(document.createElement('tr')).attr({'data-type': 'content', 'data-row': i});
 
-                        for(var j =0;j<colNum;j++){
-                            var $th= $(document.createElement('th')).css({'width':colWidths,'height':rowHeights}).attr({'data-row':i,'data-col':j,'data-type':'content'});
+                        for (var j = 0; j < colNum; j++) {
+                            var $th = $(document.createElement('th')).css({
+                                'width': colWidths,
+                                'height': rowHeights
+                            }).attr({'data-row': i, 'data-col': j, 'data-type': 'content'});
                             $tr.append($th);
                         }
                         $content.append($tr);
                     }
                 })();
 
-                //包裹div
-                var $wraper =$(document.createElement('div')).addClass('wraper');
+                //参照线div
+                var $indicator = $(document.createElement('div')).addClass('indicator');
 
-                $wraper.append($hhead);
-                var $indicator = $(document.createElement('div'));
+                $indicator.append($hhead);
 
-                $indicator.append($vhead);
-                $indicator.append($content);
+                //包裹内容表的div
+                var $wrapper = $(document.createElement('div')).addClass('wrapper');
 
-                $wraper.append($indicator);
-                $('#container').append($wraper);
+                $wrapper.append($vhead);
+                $wrapper.append($content);
 
-                var width = $hhead.width()+1;
+                $indicator.append($wrapper);
+                $('#container').append($indicator);
+
+                var width = $hhead.width() + 1;
                 var height = $vhead.height();
 
 
-                //参照线
-                $indicator.css({'width':width,'height':height+'px'});
+                $wrapper.css({'width': ($hhead.width() + 1)+'px', 'height': $vhead.height() + 'px'});
 
                 var $rowResizer = $(document.createElement('div')).addClass('resizer').addClass('rowResizer');
                 var $colResizer = $(document.createElement('div')).addClass('resizer').addClass('colResizer');
@@ -98,18 +113,80 @@
                 $('#container').append($rowResizer);
 
 
-
-
-                $('.thead.horizon th').on('mouseover',function(e){
+                /*实现类似excel的调整宽度的功能*/
+                $('.thead.horizon th').on('mouseover', function (e) {
 
                     $(this).append($colResizer);
-                    var x = e.clientX;
-                    console.log(x);
+                    $colResizer.css({'display': 'block', 'height': headHeight}).attr('data-col', $(this).data('col'));
+
+
+                });
+
+                $colResizer.on('mouseover', function () {
+                    $colResizer.css('background-color', '#CBCBCB');
+                });
+                $colResizer.on('mouseout', function () {
+                    $colResizer.css('background-color', 'transparent');
+                });
+
+                var dragable = false;
+                var x;
+                var move;
+
+                //鼠标移动时的处理器（水平）
+                var mouseMoveHandlerX = function (e) {
+                    if (dragable) {
+                        move = e.clientX - x;
+                        console.log('mousemove时X值:' + e.clientX);
+                        console.log('mousemove时move值:' + move);
+                        console.log('mousemove时dragable值:' + dragable);
+                        console.log('mousemove时行数:' + $colResizer.data('col'));
+                    }
+                };
+
+                //鼠标松开处理器（水平）
+                var mouseUpHandlerX = function (e) {
+                    dragable = false;
+                    console.log('mouseup时dragable值:' + dragable);
+                    var col = $colResizer.data('col');
+                    console.log('mouseup时行数:' + col);
+                    var width = $('table.content th[data-col=' + col + ']').width();
+                    console.log('单元格原width:' + width);
+
+                    if (move < 0 && (width - Math.abs(move)) <= 12) {
+                        $('table th[data-col=' + col + ']').css('width', 12 + 'px');
+                    } else {
+                        $('table th[data-col=' + col + ']').css('width', (width + move) + 'px');
+
+                        console.log('mouseup时move值:' + move);
+                        console.log('单元格现width:' + $('table th[data-col=' + col + ']').css('width'));
+                        width = $wrapper.width();
+                        $wrapper.css('width', (width + move) + 'px');
+                    }
+
+                    $(document).off('mousemove', mouseMoveHandlerX);
+                    $(document).off('mouseup', mouseUpHandlerX);
+                    move = 0;
+                    x = 0;
+                };
+
+                $colResizer.on('mousedown', function (e) {
+                    x = e.clientX;
+                    dragable = true;
+
+                    console.log('mousedown时x值:' + x);
+                    console.log('mousedown时dragable值:' + dragable);
+                    console.log('mousedown时行数:' + $colResizer.data('col'));
+
+
+                    $(document).on('mousemove', mouseMoveHandlerX);
+
+                    $(document).on('mouseup', mouseUpHandlerX);
+
                 });
 
 
             })();
-
 
 
         });
@@ -122,48 +199,82 @@
             border-spacing: 0;
             empty-cells: show;
             box-sizing: content-box;
-            -moz-box-sizing:content-box;
+            -moz-box-sizing: content-box;
             -webkit-box-sizing: content-box;
-            width:0;
+
+            /*table只有在设置width为零的情况下，才能不被容器挤压*/
+            width: 0;
             table-layout: fixed;
+
         }
-        table th,table td{
+
+        table th, table td {
             border-right: solid 1px #CBCBCB;
             border-bottom: solid 1px #CBCBCB;
             height: 30px;
             width: 60px;
+            position: relative;
         }
-        table.thead{
+
+        table.thead {
             background-color: rgba(225, 225, 225, 0.67);
 
         }
-        table.thead.vertical{
-            float: left;border-top:0px;
-        }
-        table.content{
-            float: left;border-top:0px;border-left: 0px
+
+        table.thead th {
+
+            /*禁止文字选中*/
+            -moz-user-select: none; /*火狐*/
+            -webkit-user-select: none; /*webkit浏览器*/
+            -ms-user-select: none; /*IE10*/
+            -khtml-user-select: none; /*早期浏览器*/
+            user-select: none;
         }
 
-        .wraper{
+        table.thead.vertical {
+            float: left;
+            border-top: 0px;
+        }
+
+        table.content {
+            float: left;
+            border-top: 0px;
+            border-left: 0px
+        }
+
+        .indicator {
 
             overflow: visible;
-            border-right:dotted 2px rgba(213, 129, 30, 0.95);
-            border-bottom:dotted 2px rgba(213, 129, 30, 0.95);
+            border-right: dotted 2px rgba(213, 129, 30, 0.95);
+            border-bottom: dotted 2px rgba(213, 129, 30, 0.95);
             width: 733px;
-            height:1062px;
+            height: 1062px;
 
         }
 
+        .wrapper {
+
+        }
 
         .resizer {
+            padding: 1px 1px;
             display: none;
+            position: absolute;
         }
 
-        .resizer.colResizer{
-
+        .resizer.colResizer {
+            width: 6px;
+            top: 0px;
+            right: 0px;
+            z-index: 2;
         }
 
-        .resizer.rowResizer{
+        .resizer.colResizer:hover {
+            cursor: ew-resize;
+        }
+
+        .resizer.rowResizer {
+            height: 6px;
 
         }
 
@@ -171,13 +282,10 @@
 </head>
 <body>
 <h1 style="width: 200px;margin:0 auto;">XXXXX</h1>
-<div id="container" style="margin: 0 auto;width:794px;height:1124px;border: solid 1px darkgrey;position: relative;overflow: hidden">
+<div id="container"
+     style="margin: 0 auto;width:794px;height:1123px;border: solid 1px darkgrey;position: relative;overflow: hidden">
 
 </div>
-
-
-
-
 
 
 </body>

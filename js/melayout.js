@@ -6,8 +6,10 @@
 ;(function ($, window, document, undefined) {
 
     var Layout, VLayout, HLayout,
-        A4WIDTH = 794, A4HEIGHT = 1123, CONTENTWIDTH = 734, CONTENTHEIGHT = 1062//a4纸长宽,显示区域长宽
-        ;
+        A4_WIDTH = 794, A4_HEIGHT = 1123, //a4纸长宽,
+        ABS_CONTENT_WIDTH = 734, ABS_CONTENT_HEIGHT = 1062,//显示区域绝对长宽
+        REL_CONTENT_WIDTH = 780, REL_CONTENT_HEIGHT = 1160,
+        ROW_NUM =40,COL_NUM = 20;
 
     /**
      * 判断是否数组中是否含有此值
@@ -39,6 +41,22 @@
         return false;
     }
 
+
+    /**
+     * 将列数转换成列名,类似excel
+     */
+    function spreadsheetColumnLabel(index) {
+        var dividend = index + 1;
+        var columnLabel = '';
+        var modulo;
+        while (dividend > 0) {
+            modulo = (dividend - 1) % 26;
+            columnLabel = String.fromCharCode(65 + modulo) + columnLabel;
+            dividend = parseInt((dividend - modulo) / 26, 10);
+        }
+        return columnLabel;
+    }
+
     /**
      * 通过原型链继承模式创建新的构造函数
      * @param superClass
@@ -55,7 +73,9 @@
     }
 
 
+
     Layout = clazz(Object, {
+
 
         init: function (options) {
             options = this.prepareOpts(options);
@@ -68,8 +88,29 @@
          * @returns {void|*|{get}}
          */
         prepareOpts: function (options) {
+            options = this.optionSecurityFilter(options);
             options = $.extend({}, $.fn.meLayout.defaults, options);
             this.cellSizeCaculator(options);
+            return options;
+        },
+
+        /**
+         * 数据安全性过滤
+         * @param options
+         * @returns {*}
+         */
+        optionSecurityFilter:function(options){
+
+            options.rowNum=options.rowNum?parseInt(options.rowNum,10):options.rowNum;
+            options.colNum=options.colNum?parseInt(options.colNum,10):options.colNum;
+            options.colWidths=options.colWidths?parseInt(options.colWidths,10):options.colWidths;
+            options.rowHeights=options.rowHeights?parseInt(options.rowHeights,10):options.rowHeights;
+            delete options.contentWidth;
+            delete options.contentHeight;
+            delete options.paperWidth;
+            delete options.paperHeight;
+            delete options.headWidth;
+            delete options.headHeight;
             return options;
         },
 
@@ -78,17 +119,20 @@
          * @param options
          */
         cellSizeCaculator: function (options) {
+            var temp;
             switch (options.orient) {
                 case 'vertical':
-                    options.rowHeights = Math.floor(CONTENTHEIGHT / options.rowNum);
-                    options.colWidths = Math.floor(CONTENTWIDTH / options.colNum);
+                    options.rowHeights = Math.floor(ABS_CONTENT_HEIGHT / options.rowNum);
+                    options.colWidths = Math.floor(ABS_CONTENT_WIDTH / options.colNum);
 
                     break;
                 case 'horizontal':
-                    options.rowHeights = Math.floor(CONTENTWIDTH / options.rowNum);
-                    options.colWidths = Math.floor(CONTENTHEIGHT / options.colNum);
-                    options.conWith = A4HEIGHT;
-                    options.conHeig = A4WIDTH;
+                    options.rowHeights = Math.floor(ABS_CONTENT_WIDTH / options.rowNum);
+                    options.colWidths = Math.floor(ABS_CONTENT_HEIGHT / options.colNum);
+                    options.paperWidth = A4_HEIGHT;
+                    options.paperHeight = A4_WIDTH;
+                    options.contentWidth = ABS_CONTENT_HEIGHT;
+                    options.contentHeight = ABS_CONTENT_WIDTH;
                     break;
             }
         },
@@ -99,41 +143,94 @@
          */
         createTable: function (options) {
             var $container = options.$container,//容器
-                $indicator,//参照框
-                $table;//table实体
+                $indicator = $(document.createElement('div')).addClass('indicator').css({
+                    'width': (options.colWidths+3)*options.colNum+options.headWidth+3,
+                    'height': (options.rowHeights+3)*options.rowNum+options.headHeight+3
+                }),//参照框
+                $wrapper = $(document.createElement('div')).addClass('wrapper'),//包裹内容table和竖直表头
+                $content = $(document.createElement('table')).addClass('content'),//内容框
+                $hhead = $(document.createElement('table')).addClass('thead').addClass('horizon'),//横表头
+                $vhead = $(document.createElement('table')).addClass('thead').addClass('vertical');//竖表头
+
+
             $container.empty();//去除容器内元素
             $container.removeAttr('style', '');//去除容器样式
             $container.css({
-                'width': options.conWith + 'px', 'height': options.conHeig + 'px'
+                'width': (options.colWidths+3)*options.colNum+options.headWidth+3,
+                'height': (options.rowHeights+3)*options.rowNum+options.headHeight+3
             });//让容器的长宽与a4纸尺寸相同
             $container.addClass('meLayout');
 
-            $indicator = $(document.createElement('div')).css({
-                'margin-left': '8px',
-                'margin-top': '5px',
-                'position': 'relative'
-            }).addClass('indicator');
-
-            $table = $(document.createElement('table')).prop('class', 'table').append('<thead></thead><tbody></tbody>');//设置table的位置
-
-            $container.append($indicator);
-            $indicator.append($table);
-
-
-            $container.data("meLayout", this);//将整个对象存入容器元素中
-            var $htr = $(document.createElement('tr')).css('height', options.rowHeights + 'px').appendTo('thead');
+            /*循环生成横表头单元格*/
             (function () {
-                for (var i = 0; i < options.colNum; i++) {
+                var $tr = $(document.createElement('tr')).attr('data-type', 'hhead');
+                for (var i = 0; i < parseInt(options.colNum)+1 ; i++) {
+                    var $th = $(document.createElement('th')).css({'height': options.headHeight});
+                    if (i > 0) {
+                        $th.html(spreadsheetColumnLabel(i - 1)).attr({
+                            'data-col': i - 1,
+                            'data-type': 'hhead'
+                        }).css('width', options.colWidths + 'px');
+                    } else {
+                        $th.attr('data-col', 'blank').css('width', options.headWidth);
+                    }
+                    $tr.append($th);
+                }
+                $hhead.append($tr);
+            })();
 
+            /*循环生成竖表头单元格*/
+            (function () {
+                for (var i = 0; i < options.rowNum; i++) {
+                    var $tr = $(document.createElement('tr')).attr('data-type', 'vhead');
+                    var $th = $(document.createElement('th')).css({
+                        'width': options.headWidth,
+                        'height': options.rowHeights
+                    }).attr({'data-row': i, 'data-type': 'vhead'}).html(i);
+                    $tr.append($th);
+                    $vhead.append($tr);
                 }
             })();
+
+            /*循环生存内容单元格*/
+            (function () {
+                for (var i = 0; i < options.rowNum; i++) {
+
+                    var $tr = $(document.createElement('tr')).attr({'data-type': 'content', 'data-row': i});
+
+                    for (var j = 0; j < options.colNum; j++) {
+                        var $th = $(document.createElement('th')).css({
+                            'width': options.colWidths,
+                            'height': options.rowHeights
+                        }).attr({'data-row': i, 'data-col': j, 'data-type': 'content'});
+                        $tr.append($th);
+                    }
+                    $content.append($tr);
+                }
+            })();
+
+            $indicator.append($hhead);
+            $wrapper.append($vhead);
+            $wrapper.append($content);
+            $indicator.append($wrapper);
+            $container.append($indicator);
+
+
+            $wrapper.css({'width': ($hhead.width()+1)+'px', 'height': ($vhead.height()+1) + 'px'});
+
+
 
 
         }
     });
 
-    HLayout = clazz(Layout, {});
-    VLayout = clazz(Layout, {});
+
+    HLayout = clazz(Layout, {
+        //todo
+    });
+    VLayout = clazz(Layout, {
+        //todo
+    });
 
 
     /**
@@ -153,7 +250,7 @@
 
         if (!args[0] || args[0] instanceof Object) {
             options = args[0] ? args[0] : {};
-            if (options.orient && options.orient === 'horizontal') {
+            if (options.orient && options.orient.toLowerCase() === 'horizontal') {
                 layout = new Layout();
                 options.rowNum = options.rowNum ? options.rowNum : 30;
                 options.colNum = options.colNum ? options.colNum : 30;
@@ -178,17 +275,21 @@
     }
 
     /**
-     * 竖向布局初始化
+     * 布局初始化
      * @type {{}}
      */
     $.fn.meLayout.defaults = {
         rowNum: 40,
         colNum: 20,
-        rowHeights: Math.floor(CONTENTHEIGHT / this.rowNum),//行高
-        colWidths: Math.floor(CONTENTWIDTH / this.colNum),//列宽
-        conWith: A4WIDTH,//容器宽度
-        conHeig: A4HEIGHT,//容器长度
-        orient: 'vertical'
+        rowHeights: Math.floor(ABS_CONTENT_HEIGHT / ROW_NUM),//行高
+        colWidths: Math.floor(ABS_CONTENT_WIDTH / COL_NUM),//列宽
+        paperWidth: A4_WIDTH,//容器宽度
+        paperHeight: A4_HEIGHT,//容器长度
+        contentWidth: ABS_CONTENT_WIDTH,//内容区域宽度
+        contentHeight: ABS_CONTENT_HEIGHT,//内容区域长度
+        orient: 'vertical',
+        headHeight: 25,
+        headWidth: 40
     }
 
 

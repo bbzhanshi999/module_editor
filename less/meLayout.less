@@ -1,14 +1,15 @@
 
-
 .meLayout {
   overflow: hidden;
   box-shadow: 3px 3px 10px grey;
   -webkit-box-shadow: 3px 3px 10px grey;
   -moz-box-shadow: 3px 3px 10px grey;
   -o-box-shadow: 3px 3px 10px grey;
+  position: relative;
   .boxSizing;
+  padding: 19px 30px 41px;
   table {
-    width:0;
+    width: 0;
     table-layout: fixed;
     border-top: solid 1px #CBCBCB;
     border-left: solid 1px #CBCBCB;
@@ -19,12 +20,27 @@
     th, td {
       border-right: solid 1px #CBCBCB;
       border-bottom: solid 1px #CBCBCB;
+      position: relative; //用于给调整框定位用
     }
     &.thead {
       background-color: rgba(225, 225, 225, 0.67);
+      th {
+        /*禁止文字选中*/
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select: none;
+        -khtml-user-select: none;
+      }
+      user-select: none;
       &.vertical {
         border-top: 0px;
         float: left;
+        th{
+          width:40px;
+        }
+      }
+      &.horizon th{
+        height: 25px;
       }
     }
     &.content {
@@ -33,12 +49,19 @@
       border-left: 0px;
     }
   }
+  .indicator {
+    overflow: visible;
+    border-right: dotted 2px rgba(213, 129, 30, 0.95);
+    border-bottom: dotted 2px rgba(213, 129, 30, 0.95);
+  }
+  .wrapper{
+
+  }
 }
 
-
 /*迫使ie按照标准的盒子模型进行计算*/
-.boxSizing{
+.boxSizing {
   box-sizing: content-box;
-  -moz-box-sizing:content-box;
+  -moz-box-sizing: content-box;
   -webkit-box-sizing: content-box;
 }
