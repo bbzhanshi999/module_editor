@@ -408,45 +408,173 @@
             var $container = options.$container,
                 $startCell, $endCell,//开始和终止和经过cell
                 dragable = false, //拖拽状态
-                startX, startY, endX, endY, temp,//坐标
-                overHandler;
+                runEvent = true,//为否启动事件流
+                startX, startY, endX, endY, //坐标
+                minX, minY, maxX, maxY,//迭代用坐标
+                overHandler, upHandler, outHandler,//鼠标事件处理器
+                mergeApplication, openMenu,//合并单元格主程序//打开右键菜单
+                $mergBtn = $(document.createElement('div')).addClass('menu_btn').html('合并单元格'),
+                $unmergBtn = $(document.createElement('div')).addClass('menu_btn').html('拆分单元格'),
+                $menu = $(document.createElement('div')).addClass('menu').append($mergBtn).append($unmergBtn);//右击菜单
+
+                outHandler = function (e) {
+                    (function () {
+                        for (var x = minX; x <= maxX; x++) {
+                            for (var y = minY; y <= maxY; y++) {
+                                $container.find('.content th[data-col=' + x + ']').filter('th[data-row=' + y + ']').removeClass('shade');
+                            }
+                        }
+                    })();
+                    $(this).off('mouseout', outHandler);
+                };
 
             overHandler = function (e) {
+                if (!dragable) {
+                    return;
+                }
                 $endCell = $(this);
                 endX = $endCell.data('col');
                 endY = $endCell.data('row');
-                console.log(endX);
                 if (startX > endX) {
-                    temp = startX;
-                    startX = endX;
-                    endX = temp;
+                    maxX = startX;
+                    minX = endX;
+                } else {
+                    maxX = endX;
+                    minX = startX;
                 }
                 if (startY > endY) {
-                    temp = startY;
-                    startY = endY;
-                    endY = temp;
+                    maxY = startY;
+                    minY = endY;
+                } else {
+                    maxY = endY;
+                    minY = startY;
                 }
 
                 (function () {
-                    for (var x = startX; x <= endX; x++) {
-                        for (var y = startY; y <= startY; y++) {
-                            var a = $container.find('.content th[data-col=' + x + '],.content th[data-row=' + y + ']').addClass('shade');
-                            console.log(a);
+                    for (var x = minX; x <= maxX; x++) {
+                        for (var y = minY; y <= maxY; y++) {
+                            $container.find('.content th[data-col=' + x + ']').filter('th[data-row=' + y + ']').addClass('shade');
+                            /*  console.log("x:"+x+"，y:"+y);*/
                         }
-                    };
+                    }
+                    /* console.log("--------------------------");*/
                 })();
+
+                $(this).on('mouseout', outHandler);
+
+
             };
 
+            upHandler = function (e) {
+                $container.find('.content th').off('mouseover', overHandler);
+                $container.find('.content th').off('mouseout', outHandler);
+
+
+                $('.meLayout .content th.shade').on('contextmenu', function (e) {
+                    var btnValue = getButton(e),
+                        menuX, menuY;
+                    if (btnValue == 2) {
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                        menuX = e.clientX;
+                        menuY = e.clientY;
+                        openMenu(menuX, menuY);
+                        return false;
+                        //todo：启动合并单元格
+                    }
+                    runEvent = true;//启动事件流
+                });
+
+                $('body').on('mousedown', function () {
+                    $container.find('.content th').removeClass('shade');
+                    if($menu)$menu.removeClass('show');
+                })
+
+            }
+
+
             $container.find('.content th').on('mousedown', function (e) {
+                if (getButton(e) == 2) {
+                    //console.log('th调用右键:'+'x:'+startX+",y:"+startY);
+                    return false;
+                }
                 $startCell = $(this);
                 startX = $startCell.data('col');
                 startY = $startCell.data('row');
+                //console.log('th调用左键:'+'x:'+startX+",y:"+startY);
                 dragable = true;
                 $container.find('.content th').on('mouseover', overHandler);
+                $container.find('.content th').on('mouseup', upHandler);
             });
 
+            /*合并单元格处理程序*/
+            mergeApplication = function () {
+                var rowspan = parseInt(maxY, 10) - parseInt(minY, 10) + 1;
+                var colspan = parseInt(maxX, 10) - parseInt(minX, 10) + 1;
+                var totalWidth = 0, totalHeight = 0;
 
-            //todo：启动合并单元格
+                var $mergeCell = $('.meLayout .content th[data-col=' + minX + ']').filter('th[data-row=' + minY + ']').prop({
+                    'rowspan': rowspan,
+                    'colspan': colspan
+                });
+
+                (function () {
+                    var $cell;
+                    totalWidth = parseFloat($container.find('.thead.horizon th[data-col=' + minX + ']').css('width'));
+                    totalHeight = parseFloat($container.find('.thead.vertical th[data-row=' + minY + ']').css('height'));
+                    console.log(totalWidth);
+                    console.log(totalHeight);
+
+                    /*计算合并后的宽度*/
+                    for (var x = minX; x < maxX; x++) {
+                        $cell = $container.find('.thead.horizon th[data-col=' + x + ']');
+                        totalWidth = totalWidth + parseFloat($cell.width()) + 1;
+                    }
+                    for (var y = minY; y < maxY; y++) {
+                        $cell = $container.find('.thead.vertical th[data-row=' + y + ']');
+                        totalHeight = totalHeight + parseFloat($cell.height()) + 1;
+                    }
+                    console.log(totalWidth);
+                    console.log(totalHeight);
+                })();
+
+
+                (function () {
+                    var $cell;
+                    for (var x = minX; x <= maxX; x++) {
+                        $cell = $container.find('.content th[data-col=' + x + ']');
+                        for (var y = minY; y <= maxY; y++) {
+                            $cell = $cell.filter('th[data-row=' + y + ']');
+                            if (x != minX || y != minY) {
+                                $container.find('.content th[data-col=' + x + ']').filter('th[data-row=' + y + ']').remove();
+                            }
+
+                        }
+                    }
+                })();
+                $mergeCell.css({'width': totalWidth, 'height': totalHeight});
+            };
+
+
+            /**
+             * 打开菜单程序
+             * @param menuX
+             * @param menuY
+             */
+            openMenu = function (menuX, menuY) {
+
+                $menu.addClass('show').appendTo('body').css({
+                    'top': menuY,
+                    'left': menuX
+                });
+
+                $mergBtn.on('click', function (e) {
+                    mergeApplication();
+                    $menu.removeClass('show');
+                })
+
+            }
         },
 
         /**
@@ -455,6 +583,7 @@
          */
         openEdit: function (options) {
             //todo:启动编辑功能
+
         }
     });
 
