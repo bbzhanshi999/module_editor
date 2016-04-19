@@ -443,12 +443,16 @@
             var $container = options.$container,
                 $startCell, $endCell,//开始和终止和经过cell
                 dragable = false, //拖拽状态
+                transXFlag,transYFlag,//选中区域扩展标记
                 runEvent = true,//为否启动事件流
                 startX, startY, endX, endY, //坐标
+                endminX,endmaxX,endminY,endmaxY,
                 minX, minY, maxX, maxY,//迭代用坐标
                 overHandler, upHandler, outHandler,//鼠标事件处理器
                 mergeApplication,unmergeApplication, openMenu,//合并单元格主程序//取消合并//打开右键菜单
+                getExtremeY,getExtremeX,
                 $selectedShower=$('div.selected');
+
 
                 outHandler = function (e) {
                     (function () {
@@ -461,30 +465,128 @@
                     $(this).off('mouseout', outHandler);
                 };
 
+            getExtremeY =function(x){
+                (function(){
+
+                    for(var i = minY;i<=maxY;i++){
+                        var $th = $('.meLayout .content th[data-row = '+i+']').filter('th[data-col='+x+']');
+                        var endminX = x;
+                        var endminY = i;
+                        var endmaxX = x+$th.prop('colspan')-1;
+                        var endmaxY = i+$th.prop('rowspan')-1;
+                        if(endminX<minX){
+                            minX=endminX;
+                            transXFlag =false;
+                            console.log('minX变化为：'+minX);
+                            getExtremeY(endminX);
+                        }
+
+                        if(endmaxX>maxX){
+                            maxX=endmaxX;
+                            transXFlag =false;
+                            console.log('maxX变化为：'+maxX);
+                            getExtremeY(endmaxX);
+                        }
+
+                        if(endminY<minY){
+                            minY=endminY;
+                            transYFlag =false;
+                            console.log('minY变化为：'+minY);
+                            getExtremeX(endminY);
+                        }
+
+                        if(endmaxY>maxY){
+                            maxY=endmaxY;
+                            transYFlag =false;
+                            console.log('maxY变化为：'+maxY);
+                            getExtremeX(endmaxY);
+                        }
+                    }
+                })();
+            };
+
+            getExtremeX =function(y){
+                (function(){
+
+                    for(var i = minX;i<=maxX;i++){
+                        var $th = $('.meLayout .content th[data-col = '+i+']').filter('th[data-row='+y+']');
+                        var endminX = i;
+                        var endminY = y;
+                        var endmaxX = i+$th.prop('colspan')-1;
+                        var endmaxY = y+$th.prop('rowspan')-1;
+                        if(endminX<minX){
+                            minX=endminX;
+                            transXFlag =false;
+                            console.log('minX变化为：'+minX);
+                            getExtremeY(endminX);
+                        }
+
+                        if(endmaxX>maxX){
+                            maxX=endmaxX;
+                            transXFlag =false;
+                            console.log('maxX变化为：'+maxX);
+                            getExtremeY(endmaxX);
+                        }
+
+                        if(endminY<minY){
+                            minY=endminY;
+                            transYFlag =false;
+                            console.log('minY变化为：'+minY);
+                            getExtremeX(endminY);
+                        }
+
+                        if(endmaxY>maxY){
+                            maxY=endmaxY;
+                            transYFlag =false;
+                            console.log('maxY变化为：'+maxY);
+                            getExtremeX(endmaxY);
+                        }
+                    }
+                })();
+            }
+
+
             overHandler = function (e) {
                 if (!dragable) {
                     return;
-                }
+                  }
                 $endCell = $(this);
-                endX = $endCell.data('col');
-                endY = $endCell.data('row');
-                if (minX > endX) {
-                    minX = endX;
+                endminX = $endCell.data('col');
+                endminY = $endCell.data('row');
+                endmaxX =endminX+parseInt($endCell.prop('colspan'))-1;
+                endmaxY =endminY+parseInt($endCell.prop('rowspan'))-1;
+                minX = parseInt(startX);
+                minY = parseInt(startY);
+                maxX = minX +parseInt($startCell.prop('colspan'))-1;
+                maxY = minY +parseInt($startCell.prop('rowspan'))-1;
+                if(endminX<minX){
+                    minX=endminX;
+                    transXFlag =false;
+                    console.log('minX变化为：'+minX);
+                    getExtremeY(endminX);
                 }
 
-                if (minY > endY) {
-                    minY = endY;
+                if(endmaxX>maxX){
+                    maxX=endmaxX;
+                    transXFlag =false;
+                    console.log('maxX变化为：'+maxX);
+                    getExtremeY(endmaxX);
                 }
 
-                endX =endX+parseInt($endCell.prop('colspan'))-1;
-                endY =endY+parseInt($endCell.prop('rowspan'))-1;
+                if(endminY<minY){
+                    minY=endminY;
+                    transYFlag =false;
+                    console.log('minY变化为：'+minY);
+                    getExtremeX(endminY);
+                }
 
-                if(endX>maxX){
-                    maxX=endX;
+                if(endmaxY>maxY){
+                    maxY=endmaxY;
+                    transYFlag =false;
+                    console.log('maxY变化为：'+maxY);
+                    getExtremeX(endmaxY);
                 }
-                if(endY>maxY){
-                    maxY=endY;
-                }
+
 
                 (function () {
                     for (var x = minX; x <= maxX; x++) {
@@ -543,6 +645,8 @@
                 maxY = minY +parseInt($startCell.prop('rowspan'))-1;
                 //console.log('th调用左键:'+'x:'+startX+",y:"+startY);
                 dragable = true;
+                transYFlag=true;
+                transXFlag=true;
                 $container.addClass('cross');
                 $container.find('.content th').on('mouseover', overHandler);
                 $container.find('.content th').on('mouseup', upHandler);
