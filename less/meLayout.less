@@ -21,7 +21,7 @@
       position: relative; //用于给调整框定位用
     }
     &.thead {
-      background-color: rgba(225, 225, 225, 0.67);
+      background-color: rgb(225, 225, 225);
       th {
         /*禁止文字选中*/
         .user-select;
@@ -36,8 +36,9 @@
           overflow: hidden;
         }
       }
-      &.horizon th {
-        height: 25px;
+      &.horizon {
+        position: absolute;
+        z-index: 2;
       }
     }
     &.content {
@@ -45,7 +46,7 @@
       border-top: 0px;
       border-left: 0px;
       th.shade {
-        background-color: rgba(132, 138, 213, 0.95);
+        background-color: #E5EEFE;
         opacity: 0.8;
       }
     }
@@ -66,7 +67,7 @@
       width: 6px;
       top: 0px;
       right: 0px;
-      z-index: 2;
+      z-index: 3;
       &:hover {
         cursor: ew-resize;
         background-color: #d2d2d8;
@@ -103,6 +104,7 @@
   position: absolute;
   display: none;
   left: 0px;
+  z-index: 10;
   &.show {
     display: block;
   }
@@ -115,6 +117,7 @@
   position: absolute;
   display: none;
   top: 0px;
+  z-index: 10;
   &.show {
     display: block;
   }
@@ -135,8 +138,13 @@
     margin: 0 auto;
     padding: 5px 5px 5px 5px;
     border-bottom: solid 2px grey;
-    z-index: 2;
+    z-index: 3;
   }
+}
+
+/*改变鼠标指针为cross*/
+.cross{
+  cursor:crosshair;
 }
 
 /*显示*/

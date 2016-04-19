@@ -9,7 +9,11 @@
         A4_WIDTH = 794, A4_HEIGHT = 1123, //a4纸长宽,
         ABS_CONTENT_WIDTH = 734, ABS_CONTENT_HEIGHT = 1062,//显示区域绝对长宽
         ROW_NUM = 40, COL_NUM = 20,//行列数
-        $selectedCell;//被选中的单元格
+        $selectedCell,//被选中的单元格
+        $mergBtn = $(document.createElement('div')).addClass('menu_btn').html('合并单元格'),
+        $unmergBtn = $(document.createElement('div')).addClass('menu_btn').html('取消合并'),
+        $menu = $(document.createElement('div')).addClass('menu').append($mergBtn).append($unmergBtn);//右击菜单
+
     /**
      * 判断是否数组中是否含有此值
      * @param value
@@ -135,7 +139,7 @@
             delete options.paperWidth;
             delete options.paperHeight;
             delete options.headWidth;
-            delete options.headHeight;
+            options.headHeight = options.rowHeights;
             delete options.minWidth;
             delete options.minHeight;
             return options;
@@ -172,7 +176,7 @@
             var $container = options.$container,//容器
                 $indicator = $(document.createElement('div')).addClass('indicator').css({
                     'width': (options.colWidths + 1) * options.colNum + options.headWidth + 1,
-                    'height': (options.rowHeights + 1) * options.rowNum + options.headHeight + 1
+                    'height': (options.rowHeights + 1) * options.rowNum + 1
                 }),//参照框
                 $wrapper = $(document.createElement('div')).addClass('wrapper'),//包裹内容table和竖直表头
                 $content = $(document.createElement('table')).addClass('content'),//内容框
@@ -191,16 +195,16 @@
             $container.removeAttr('style', '');//去除容器样式
             $container.css({
                 'width': (options.colWidths + 1) * options.colNum + options.headWidth + 1,
-                'height': (options.rowHeights + 1) * options.rowNum + options.headHeight + 1
+                'height': (options.rowHeights + 1) * options.rowNum + 1
             });//让容器的长宽与a4纸尺寸相同
             $container.addClass('meLayout');
 
             /*循环生成横表头单元格*/
             (function () {
                 var $tr = $(document.createElement('tr')).attr('data-type', 'hhead');
-                for (var i = 0; i < parseInt(options.colNum) + 1; i++) {
-                    var $th = $(document.createElement('th')).css({'height': options.headHeight});
-                    if (i > 0) {
+                for (var i = 1; i < parseInt(options.colNum) + 2; i++) {
+                    var $th = $(document.createElement('th')).css({'height': options.rowHeights});
+                    if (i > 1) {
                         $th.html(spreadsheetColumnLabel(i - 1)).attr({
                             'data-col': i - 1,
                             'data-type': 'hhead'
@@ -232,7 +236,7 @@
 
                     var $tr = $(document.createElement('tr')).attr({'data-type': 'content', 'data-row': i});
 
-                    for (var j = 0; j < options.colNum; j++) {
+                    for (var j = 1; j < options.colNum+1; j++) {
                         var $th = $(document.createElement('th')).css({
                             'width': options.colWidths,
                             'height': options.rowHeights
@@ -261,7 +265,7 @@
                     $(this).append($colResizer);
                     $colResizer.css({
                         'display': 'block',
-                        'height': options.headHeight
+                        'height': options.rowHeights
                     }).attr('data-col', $(this).data('col'));
                 } else if ($(this).data('type') === 'vhead') {
                     $(this).append($rowResizer);
@@ -278,8 +282,8 @@
                 if (dragable) {
                     moveX = e.clientX - x;
                     moveY = e.clientY - y;
-                    $tipLineX.css('top', e.clientY);
-                    $tipLineY.css('left', e.clientX);
+                    $tipLineX.css('top', (e.clientY+$('body').scrollTop())+'px');
+                    $tipLineY.css('left', (e.clientX+$('body').scrollLeft())+'px');
                 }
             };
 
@@ -293,24 +297,49 @@
                 switch (resDiretion) {
                     case 'V':
 
-                        height = $('.meLayout table.content th[data-row=' + row + ']').height();
+                        height = $('.meLayout .thead.vertical th[data-row=' + row + ']').height();
+                        console.log("单元格高度："+height);
+
 
                         if (moveY < 0 && (height - Math.abs(moveY)) <= options.minHeight) {
-                            $('.meLayout table th[data-row=' + row + ']').css('height', options.minHeight + 'px');
+                            $('.meLayout table th[data-row=' + row + ']').css('height', options.minHeight );
                         } else {
-                            $('.meLayout table th[data-row=' + row + ']').css('height', (height + moveY) + 'px');
+                            $('.meLayout table th[data-row=' + row + ']').css('height', height + moveY);
                             height = $wrapper.height();
-                            $wrapper.css('width', (height + moveY) + 'px');
+                            $wrapper.css('height', (height + moveY) + 'px');
                         }
 
                         break;
                     case 'H':
-                        width = $('.meLayout table.content th[data-col=' + col + ']').width();
-
+                        width = $('.meLayout .thead.horizon th[data-col=' + col + ']').width();
+                        console.log("单元格宽度："+width);
                         if (moveX < 0 && (width - Math.abs(moveX)) <= options.minWidth) {
-                            $('.meLayout table th[data-col=' + col + ']').css('width', options.minWidth + 'px');
+                            console.log("col"+col);
+                            console.log($('.meLayout table th[data-col=' + col + ']').length);
+                            $('.meLayout table th[data-col=' + col + ']').each(function(){
+                                if($(this).prop('colspan')&&$(this).prop('colspan')>1){
+
+                                    $(this).css('width', options.minWidth + 'px');
+                                }
+                            })
+
+
+
+                           // $('.meLayout table th[data-col=' + col + ']').filter('th[colspan=1]').css('width', options.minWidth + 'px');
                         } else {
-                            $('.meLayout table th[data-col=' + col + ']').css('width', (width + moveX) + 'px');
+                            console.log("col"+col);
+                            console.log($('.meLayout table th[data-col=' + col + ']').length);
+                            $('.meLayout table th[data-col=' + col + ']').each(function(){
+                                if($(this).prop('colspan')&&$(this).prop('colspan')>1){
+                                    console.log($(this).prop('colspan'));
+                                    var w = $(this).css('width');
+                                    console.log("mergerCellWith:"+w);
+                                    $(this).css('width', parseFloat(moveX)+parseFloat(w));
+                                }else{
+                                    $(this).css('width', width+moveX);
+                                }
+                            })
+                           // $('.meLayout table th[data-col=' + col + ']').filter('th[colspan=1]').css('width', (width + moveX) + 'px');
                             width = $wrapper.width();
                             $wrapper.css('width', (width + moveX) + 'px');
                         }
@@ -347,13 +376,13 @@
                     row = $(this).attr('data-row');
                     $('body').css('cursor', 'ns-resize');
                     $('body').append($tipLineX);
-                    $tipLineX.addClass('show').css('top', y);
+                    $tipLineX.addClass('show').css('top', (y+$('body').scrollTop())+'px');
                 } else {
                     resDiretion = 'H';
                     col = $(this).attr('data-col');
                     $('body').css('cursor', 'ew-resize');
                     $('body').append($tipLineY);
-                    $tipLineY.addClass('show').css('left', x);
+                    $tipLineY.addClass('show').css('left', (x+$('body').scrollLeft())+'px');
                 }
                 $(document).on('mouseup', mouseUpHandler);
 
@@ -382,6 +411,12 @@
                     'height': $(this).height() - 4
                 }).addClass('show').appendTo(this);
                 $selectedCell = $(this);
+
+
+               /* console.log("css：width："+$(this).css('width'));
+                console.log("width："+$(this).width());
+                console.log("css：height："+$(this).css('height'));
+                console.log("height："+$(this).height());*/
                 return false;
             });
 
@@ -412,10 +447,8 @@
                 startX, startY, endX, endY, //坐标
                 minX, minY, maxX, maxY,//迭代用坐标
                 overHandler, upHandler, outHandler,//鼠标事件处理器
-                mergeApplication, openMenu,//合并单元格主程序//打开右键菜单
-                $mergBtn = $(document.createElement('div')).addClass('menu_btn').html('合并单元格'),
-                $unmergBtn = $(document.createElement('div')).addClass('menu_btn').html('拆分单元格'),
-                $menu = $(document.createElement('div')).addClass('menu').append($mergBtn).append($unmergBtn);//右击菜单
+                mergeApplication,unmergeApplication, openMenu,//合并单元格主程序//取消合并//打开右键菜单
+                $selectedShower=$('div.selected');
 
                 outHandler = function (e) {
                     (function () {
@@ -435,19 +468,22 @@
                 $endCell = $(this);
                 endX = $endCell.data('col');
                 endY = $endCell.data('row');
-                if (startX > endX) {
-                    maxX = startX;
+                if (minX > endX) {
                     minX = endX;
-                } else {
-                    maxX = endX;
-                    minX = startX;
                 }
-                if (startY > endY) {
-                    maxY = startY;
+
+                if (minY > endY) {
                     minY = endY;
-                } else {
-                    maxY = endY;
-                    minY = startY;
+                }
+
+                endX =endX+parseInt($endCell.prop('colspan'))-1;
+                endY =endY+parseInt($endCell.prop('rowspan'))-1;
+
+                if(endX>maxX){
+                    maxX=endX;
+                }
+                if(endY>maxY){
+                    maxY=endY;
                 }
 
                 (function () {
@@ -468,7 +504,7 @@
             upHandler = function (e) {
                 $container.find('.content th').off('mouseover', overHandler);
                 $container.find('.content th').off('mouseout', outHandler);
-
+                $container.removeClass('cross');
 
                 $('.meLayout .content th.shade').on('contextmenu', function (e) {
                     var btnValue = getButton(e),
@@ -477,18 +513,17 @@
 
                         e.preventDefault();
                         e.stopPropagation();
-                        menuX = e.clientX;
-                        menuY = e.clientY;
+                        menuX = e.clientX+$('body').scrollLeft();
+                        menuY = e.clientY+$('body').scrollTop();
                         openMenu(menuX, menuY);
                         return false;
-                        //todo：启动合并单元格
+
                     }
                     runEvent = true;//启动事件流
                 });
 
                 $('body').on('mousedown', function () {
                     $container.find('.content th').removeClass('shade');
-                    if($menu)$menu.removeClass('show');
                 })
 
             }
@@ -502,8 +537,13 @@
                 $startCell = $(this);
                 startX = $startCell.data('col');
                 startY = $startCell.data('row');
+                minX = parseInt(startX);
+                minY = parseInt(startY);
+                maxX = minX +parseInt($startCell.prop('colspan'))-1;
+                maxY = minY +parseInt($startCell.prop('rowspan'))-1;
                 //console.log('th调用左键:'+'x:'+startX+",y:"+startY);
                 dragable = true;
+                $container.addClass('cross');
                 $container.find('.content th').on('mouseover', overHandler);
                 $container.find('.content th').on('mouseup', upHandler);
             });
@@ -518,6 +558,12 @@
                     'rowspan': rowspan,
                     'colspan': colspan
                 });
+
+                $selectedShower.css({
+                    'width': $mergeCell.width() - 4,
+                    'height': $mergeCell.height() - 4
+                }).addClass('show').appendTo($mergeCell);
+                $selectedCell = $mergeCell;
 
                 (function () {
                     var $cell;
@@ -553,9 +599,21 @@
                         }
                     }
                 })();
-                $mergeCell.css({'width': totalWidth, 'height': totalHeight});
+
+                //$mergeCell.css({'width': totalWidth, 'height': totalHeight});//给合并后的单元格赋高宽值
             };
 
+
+            /**
+             * 取消合并单元格
+             */
+            unmergeApplication=function(e){
+                $('.meLayout th.shade').each(function(e){
+                    if($(this).prop('rowspan')>1||$(this).prop('cowspan')>1){
+
+                    }
+                })
+            };
 
             /**
              * 打开菜单程序
@@ -572,6 +630,17 @@
                 $mergBtn.on('click', function (e) {
                     mergeApplication();
                     $menu.removeClass('show');
+                    return false;
+                });
+
+                $unmergBtn.on('click',function(e){
+                    unmergeApplication();
+
+                });
+
+
+                $('body').on('mouseup',function(){
+                   $menu.removeClass('show');
                 })
 
             }
@@ -643,7 +712,7 @@
         contentWidth: ABS_CONTENT_WIDTH,//内容区域宽度
         contentHeight: ABS_CONTENT_HEIGHT,//内容区域长度
         orient: 'vertical',
-        headHeight: 25,
+        //
         headWidth: 40,
         minWidth: 12,//单元格最小宽度
         minHeight: 14,//单元格最小宽度
